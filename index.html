@@ -229,13 +229,76 @@ footer{border-top:1px solid var(--border);padding:18px 20px;text-align:center;fo
   display:inline-flex;align-items:center;gap:5px;
   background:var(--blue-bg);color:var(--blue);
   border:1.5px solid #c2dfff;border-radius:20px;
-  padding:6px 12px;font-size:11px;font-weight:700;
+  padding:6px 10px;font-size:11px;font-weight:700;
   cursor:pointer;font-family:'Manrope',sans-serif;
   text-decoration:none;white-space:nowrap;flex-shrink:0;
   transition:all 0.15s;
 }
 .w-visit:hover{background:var(--blue);color:white;border-color:var(--blue);}
-.w-visit svg{width:12px;height:12px;}
+.w-visit svg{width:11px;height:11px;}
+
+/* disqualify button */
+.w-disq{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;border-radius:50%;
+  background:#fff1f0;border:1.5px solid #fcc;
+  color:#e11d48;font-size:13px;cursor:pointer;
+  flex-shrink:0;transition:all 0.15s;
+  font-family:'Manrope',sans-serif;line-height:1;
+}
+.w-disq:hover{background:#e11d48;color:white;border-color:#e11d48;}
+
+/* disqualified state */
+.w-item.disqualified{opacity:0.45;background:#fafafa;}
+.w-item.disqualified .w-medal{background:#f0f0f0!important;font-size:13px;color:#bbb;}
+.w-item.disqualified .w-name{text-decoration:line-through;color:var(--sub);}
+.w-item.disqualified .w-disq{display:none;}
+.w-item.disqualified .w-visit{display:none;}
+.w-item.disqualified .w-undo{display:inline-flex!important;}
+
+/* undo button (hidden by default) */
+.w-undo{
+  display:none;
+  align-items:center;gap:4px;
+  background:#f0f0f4;color:var(--sub);
+  border:1.5px solid var(--border);border-radius:20px;
+  padding:5px 10px;font-size:11px;font-weight:700;
+  cursor:pointer;font-family:'Manrope',sans-serif;
+  white-space:nowrap;flex-shrink:0;transition:all 0.15s;
+}
+.w-undo:hover{border-color:var(--blue);color:var(--blue);}
+
+/* substitute badge */
+.w-sub-badge{
+  display:inline-flex;align-items:center;gap:4px;
+  background:#f0fdf4;color:#16a34a;
+  border:1.5px solid #bbf7d0;border-radius:6px;
+  padding:2px 7px;font-size:10px;font-weight:700;
+  margin-top:3px;letter-spacing:0.03em;
+}
+
+/* sub section */
+.sub-section{padding:0 18px 14px;}
+.sub-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 0 8px;
+  border-top:2px dashed var(--border);
+  margin-top:4px;
+}
+.sub-title{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:0.07em;}
+.sub-count-badge{background:#fff7ed;color:#ea580c;border:1.5px solid #fed7aa;border-radius:20px;padding:3px 9px;font-size:11px;font-weight:700;}
+.no-subs{font-size:13px;color:var(--light);text-align:center;padding:12px 0;font-weight:500;}
+
+/* disqualify count bar */
+.disq-bar{
+  display:none;
+  align-items:center;justify-content:space-between;
+  background:#fff7ed;border:1.5px solid #fed7aa;
+  border-radius:10px;padding:10px 14px;margin:0 18px 4px;
+  font-size:13px;font-weight:600;color:#ea580c;
+}
+.disq-bar.show{display:flex;}
+.disq-bar-hint{font-size:11px;font-weight:500;color:#f97316;}
 
 /* modal footer */
 .modal-foot{padding:0 18px 18px;display:none;gap:10px;}
@@ -268,7 +331,18 @@ footer{border-top:1px solid var(--border);padding:18px 20px;text-align:center;fo
       <div class="roller-lbl">Shuffling through comments</div>
       <div class="roller-win"><div class="r-track" id="rTrack"></div></div>
     </div>
+    <div class="disq-bar" id="disqBar">
+      <span id="disqBarText">0 disqualified</span>
+      <span class="disq-bar-hint">Tap ❌ to disqualify</span>
+    </div>
     <div class="w-list" id="wList"></div>
+    <div class="sub-section" id="subSection" style="display:none">
+      <div class="sub-header">
+        <span class="sub-title">🔄 Substitutes</span>
+        <span class="sub-count-badge" id="subCountBadge">0 needed</span>
+      </div>
+      <div id="subList"></div>
+    </div>
     <div class="modal-foot" id="modalFoot">
       <button class="mf-btn out" onclick="closeModal();resetPick()">↩ Pick Again</button>
       <button class="mf-btn fill" onclick="shareWinners()">Share 🎉</button>
@@ -386,7 +460,7 @@ footer{border-top:1px solid var(--border);padding:18px 20px;text-align:center;fo
           <div class="pst"><div class="pst-n">11.3K</div><div class="pst-l">Views</div></div>
           <div class="pst"><div class="pst-n">685</div><div class="pst-l">Likes</div></div>
           <div class="pst"><div class="pst-n">3K</div><div class="pst-l">Comments</div></div>
-          <div class="pst"><div class="pst-n">1,022</div><div class="pst-l">Unique</div></div>
+          <div class="pst"><div class="pst-n">222</div><div class="pst-l">Unique</div></div>
         </div>
       </div>
     </div>
@@ -550,7 +624,11 @@ function openModal(pool,winners){
   document.getElementById('modalTtl').textContent='Picking winners…';
   document.getElementById('rollerSec').style.display='block';
   document.getElementById('wList').innerHTML='';
+  document.getElementById('subList').innerHTML='';
+  document.getElementById('subSection').style.display='none';
+  document.getElementById('disqBar').classList.remove('show');
   document.getElementById('modalFoot').classList.remove('show');
+  currentPool = pool;
   ov.classList.add('open');
   setTimeout(()=>ov.classList.add('shown'),10);
   setTimeout(()=>m.classList.add('up'),20);
@@ -591,39 +669,159 @@ function roller(pool,winners){
 }
 
 const medals=['🥇','🥈','🥉'];
-function showWinners(winners){
-  document.getElementById('modalTtl').textContent=winners.length===1?'🎉 Winner!':'🎉 Winners!';
-  document.getElementById('rollerSec').style.display='none';
-  const list=document.getElementById('wList');list.innerHTML='';
-  winners.forEach((w,i)=>{
-    setTimeout(()=>{
-      const mc=i<3?'m'+(i+1):'mn';
-      const mr=i<3?medals[i]:(i+1);
-      const igUrl='https://www.instagram.com/'+encodeURIComponent(w.user)+'/';
-      const d=document.createElement('div');d.className='w-item';
-      d.style.animationDelay=(i*0.1)+'s';
-      d.innerHTML=`
-        <div class="w-medal ${mc}">${mr}</div>
-        <div class="w-info">
-          <div class="w-name">@${w.user}</div>
-          <div class="w-cmt">${w.comment}</div>
-        </div>
-        <a class="w-visit" href="${igUrl}" target="_blank" rel="noopener">
-          Visit
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-          </svg>
-        </a>`;
-      list.appendChild(d);
-    },i*160);
-  });
-  setTimeout(()=>{document.getElementById('modalFoot').classList.add('show');fireConf();},winners.length*160+200);
+
+// State for substitute system
+let currentPool = [];         // full pool this round (for picking subs)
+let currentWinners = [];      // current winners array (mutable)
+let substitutes = [];         // pre-drawn substitute bench (extra picks beyond wCount)
+let disqualifiedSet = new Set(); // indices of disqualified winners
+const SUB_BENCH = 15;         // how many substitutes to pre-draw
+
+const visitSVG = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+
+function showWinners(winners) {
+  document.getElementById('modalTtl').textContent = winners.length===1 ? '🎉 Winner!' : '🎉 Winners!';
+  document.getElementById('rollerSec').style.display = 'none';
+  currentWinners = [...winners];
+  disqualifiedSet = new Set();
+  substitutes = [];
+
+  // Draw a sub bench from remaining pool (excluding current winners)
+  const usedUsers = new Set(winners.map(w => w.user.toLowerCase()));
+  const remainingPool = currentPool.filter(c => !usedUsers.has(c.user.toLowerCase()));
+  // Deduplicate remaining pool by username
+  const seenSub = new Set();
+  const deduped = [];
+  for (const c of remainingPool) {
+    if (!seenSub.has(c.user.toLowerCase())) {
+      seenSub.add(c.user.toLowerCase());
+      deduped.push(c);
+    }
+  }
+  // Shuffle and take SUB_BENCH
+  const shuffled = deduped.sort(() => Math.random() - 0.5);
+  substitutes = shuffled.slice(0, SUB_BENCH);
+
+  renderWinners();
+  setTimeout(() => {
+    document.getElementById('modalFoot').classList.add('show');
+    fireConf();
+  }, winners.length * 160 + 200);
 }
 
-function shareWinners(){
-  const names=lastWinners.map((w,i)=>(i<3?['🥇','🥈','🥉'][i]:'#'+(i+1))+' @'+w.user).join('\n');
-  if(navigator.share){navigator.share({title:'Giveaway Winners!',text:'Our giveaway winners:\n'+names}).catch(()=>{});}
-  else{alert('Winners:\n'+names);}
+function renderWinners() {
+  const list = document.getElementById('wList');
+  list.innerHTML = '';
+  currentWinners.forEach((w, i) => {
+    const isDisq = disqualifiedSet.has(i);
+    const mc = i < 3 ? 'm'+(i+1) : 'mn';
+    const mr = i < 3 ? medals[i] : (i+1);
+    const igUrl = 'https://www.instagram.com/' + encodeURIComponent(w.user) + '/';
+    const d = document.createElement('div');
+    d.className = 'w-item' + (isDisq ? ' disqualified' : '');
+    d.id = 'winner-'+i;
+    d.style.animationDelay = (i * 0.06) + 's';
+    d.innerHTML = `
+      <div class="w-medal ${mc}">${isDisq ? '❌' : mr}</div>
+      <div class="w-info">
+        <div class="w-name">@${w.user}</div>
+        <div class="w-cmt">${w.comment}</div>
+        ${isDisq ? '<div class="w-sub-badge">Disqualified</div>' : ''}
+      </div>
+      <a class="w-visit" href="${igUrl}" target="_blank" rel="noopener">Visit ${visitSVG}</a>
+      <button class="w-disq" onclick="disqualify(${i})" title="Disqualify">✕</button>
+      <button class="w-undo" onclick="undoDisqualify(${i})">↩ Undo</button>`;
+    list.appendChild(d);
+  });
+  updateSubSection();
+  updateDisqBar();
+}
+
+function disqualify(idx) {
+  disqualifiedSet.add(idx);
+  renderWinners();
+}
+
+function undoDisqualify(idx) {
+  disqualifiedSet.delete(idx);
+  renderWinners();
+}
+
+function updateDisqBar() {
+  const count = disqualifiedSet.size;
+  const bar = document.getElementById('disqBar');
+  const txt = document.getElementById('disqBarText');
+  if (count > 0) {
+    bar.classList.add('show');
+    txt.textContent = count + ' disqualified — ' + count + ' substitute' + (count>1?'s':'') + ' shown below';
+  } else {
+    bar.classList.remove('show');
+  }
+}
+
+function updateSubSection() {
+  const count = disqualifiedSet.size;
+  const sec = document.getElementById('subSection');
+  const subList = document.getElementById('subList');
+  const badge = document.getElementById('subCountBadge');
+
+  if (count === 0) {
+    sec.style.display = 'none';
+    return;
+  }
+
+  sec.style.display = 'block';
+  badge.textContent = count + ' needed';
+  subList.innerHTML = '';
+
+  const needed = [...disqualifiedSet].sort((a,b)=>a-b);
+  needed.forEach((origIdx, si) => {
+    const sub = substitutes[si];
+    if (!sub) {
+      const noMore = document.createElement('div');
+      noMore.className = 'no-subs';
+      noMore.textContent = 'No more substitutes available';
+      subList.appendChild(noMore);
+      return;
+    }
+    const igUrl = 'https://www.instagram.com/' + encodeURIComponent(sub.user) + '/';
+    // position label: takes the spot of the disqualified winner
+    const pos = origIdx + 1;
+    const d = document.createElement('div');
+    d.className = 'w-item';
+    d.style.animation = 'fadeUp 0.35s ease both';
+    d.style.animationDelay = (si * 0.08) + 's';
+    d.innerHTML = `
+      <div class="w-medal mn" style="background:#f0fdf4;color:#16a34a;font-size:11px;font-weight:800;">S${si+1}</div>
+      <div class="w-info">
+        <div class="w-name">@${sub.user}</div>
+        <div class="w-cmt">${sub.comment}</div>
+        <div class="w-sub-badge">↑ Substitute for #${pos}</div>
+      </div>
+      <a class="w-visit" href="${igUrl}" target="_blank" rel="noopener">Visit ${visitSVG}</a>`;
+    subList.appendChild(d);
+  });
+}
+
+function shareWinners() {
+  const confirmed = currentWinners
+    .map((w,i) => ({w, i}))
+    .filter(({i}) => !disqualifiedSet.has(i))
+    .map(({w,i}, ri) => (ri<3?medals[ri]:'#'+(ri+1))+' @'+w.user);
+
+  const subs = [...disqualifiedSet].sort((a,b)=>a-b).map((origIdx, si) => {
+    const sub = substitutes[si];
+    return sub ? ('🔄 Sub'+(si+1)+' @'+sub.user) : null;
+  }).filter(Boolean);
+
+  const all = [...confirmed, ...(subs.length ? ['', '🔄 Substitutes:', ...subs] : [])];
+  const text = 'Giveaway Winners:\n' + all.join('\n');
+
+  if (navigator.share) {
+    navigator.share({title:'Giveaway Winners!', text}).catch(()=>{});
+  } else {
+    alert(text);
+  }
 }
 
 function fireConf(){
